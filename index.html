@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>canvas</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/ractive"></script>
+<link rel="stylesheet" href="main.css" />
+</head>
+
+<body>
+	<label for="basic-url">Type image URL</label>
+		<div class="input-group mb-3">
+  			<div class="input-group-prepend">
+    			<span class="input-group-text" id="basic-addon3">https://image-url.jpg</span>
+  			</div>
+  		<input type="text" class="form-control" id="basic-url" aria-describedby="basic-addon3" >
+		</div>
+	<div class="buttons">
+		<button id="add" class="btn btn-primary">+</button>
+		<button id="remove" class="btn btn-primary">-</button>
+	</div>
+	<div class="alert"></div>
+	<div id="wraper"></div>
+</body>
+
+<script type="text/javascript">
+	
+document.getElementById("add").onclick = addImage;	
+document.getElementById("remove").onclick = removeImage;
+
+let objArr = [];
+
+function addImage() {
+
+	function binaryPicGet(url) {
+		url = document.querySelector("input").value;
+			if(!url) {
+		document.querySelector(".alert").innerHTML = "<h2>type url first!</h2>";
+		document.querySelector(".alert").classList.toggle("show")
+			return
+			}
+		document.querySelector(".alert").classList.toggle("show")
+		document.querySelector(".alert").innerHTML = "";
+
+			return new Promise(function(resolve, reject) {
+				var xhr = new XMLHttpRequest();
+				xhr.open("GET", url, true);
+				xhr.responseType = "blob";
+				xhr.onload = function() {
+      				if (this.status == 200) {
+       				resolve(this.response);
+					} else {
+        			var error = new Error(this.statusText);
+       				error.code = this.status;
+       				reject(error);
+     	 			}
+    			};
+   		 	xhr.onerror = function() {
+     	 		reject(new Error(this.statusText));
+   		 		};
+   			 xhr.send();
+   		 	document.querySelector("input").value = "";
+  			});
+	}
+
+		binaryPicGet().then(blob =>{
+		let imageUrl = URL.createObjectURL(blob);
+		objArr.push(imageUrl)
+			return objArr
+		}).then(objArr=>{
+			var image = new Image();
+			image.src = objArr[objArr.length-1];
+			image.onload = function(){
+			var canvas = document.createElement("canvas");
+			canvas.setAttribute("id", image.src)
+			canvas.onclick = function(){
+				this.classList.toggle('choose')
+			}
+			var ctx=canvas.getContext("2d");
+     		canvas.width  = 400;
+			canvas.height = 350;
+			var hRatio = canvas.width  / image.width; 
+  			var vRatio =  canvas.height / image.height;
+  			var ratio  = Math.min ( hRatio, vRatio );
+ 			var centerShift_x = ( canvas.width - image.width*ratio ) / 2;
+  			var centerShift_y = ( canvas.height - image.height*ratio ) / 2;  
+  			ctx.clearRect(0,0,canvas.width, canvas.height);
+   			ctx.drawImage(image, 0,0, image.width, image.height,
+                      centerShift_x,centerShift_y,image.width*ratio, image.height*ratio); 
+   			wraper.prepend(canvas)
+			}
+  		})		
+		.catch(error=>{
+			document.querySelector(".alert").innerHTML = `<h2>${error}</h2>`
+			document.querySelector(".alert").classList.toggle("show")
+		})
+}
+
+function removeImage() {
+	var chosens = Array.from(document.querySelectorAll(".choose"))
+	chosens.forEach(elem=>{
+		wraper.removeChild(elem);
+	})
+	for(let i =0; i<objArr.length;i++) {
+		for(let j=0;j<chosens.length;j++){
+		    if(objArr[i]==chosens[j].id) {
+			   objArr.splice(i,1)
+		    }
+	    }
+    }
+    return objArr
+}
+</script>
+</html>
